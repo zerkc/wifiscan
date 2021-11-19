@@ -3,6 +3,7 @@ package wifiscan
 import (
 	"bufio"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -10,8 +11,9 @@ import (
 // Wifi is the data structure containing the basic
 // elements
 type Wifi struct {
-	SSID string `json:"ssid"`
-	RSSI int    `json:"rssi"`
+	ESSID string `json:"essid"`
+	SSID  string `json:"ssid"`
+	RSSI  int    `json:"rssi"`
 }
 
 // Parse will parse wifi output and extract the access point
@@ -34,8 +36,23 @@ func parseWindows(output string) (wifis []Wifi, err error) {
 	scanner := bufio.NewScanner(strings.NewReader(output))
 	w := Wifi{}
 	wifis = []Wifi{}
+	m1 := regexp.MustCompile(`SSID\ [0-9]+\ :(.*)`)
 	for scanner.Scan() {
 		line := scanner.Text()
+		if w.ESSID == "" {
+
+			matched := m1.MatchString(line)
+			if matched {
+
+				format_line := m1.ReplaceAllString(line, "$1")
+				format_line = strings.ReplaceAll(format_line, "\"", "")
+				format_line = strings.Trim(format_line, " ")
+
+				if len(format_line) > 0 {
+					w.ESSID = format_line
+				}
+			}
+		}
 		if w.SSID == "" {
 			if strings.Contains(line, "BSSID") {
 				fs := strings.Fields(line)
@@ -81,7 +98,7 @@ func parseDarwin(output string) (wifis []Wifi, err error) {
 		if rssi > 0 {
 			continue
 		}
-		wifis = append(wifis, Wifi{SSID: strings.ToLower(fs[1]), RSSI: rssi})
+		wifis = append(wifis, Wifi{ESSID: fs[0], SSID: strings.ToLower(fs[1]), RSSI: rssi})
 	}
 	return
 }
@@ -92,6 +109,22 @@ func parseLinux(output string) (wifis []Wifi, err error) {
 	wifis = []Wifi{}
 	for scanner.Scan() {
 		line := scanner.Text()
+
+		if w.ESSID == "" {
+			if strings.Contains(line, "ESSID") {
+
+				format_line := strings.Trim(line, " ")
+				arr_line := strings.Split(format_line, ":")
+				format_line = arr_line[1]
+				format_line = strings.ReplaceAll(format_line, "\"", "")
+				format_line = strings.Trim(format_line, " ")
+
+				if len(format_line) > 0 {
+					w.ESSID = format_line
+				}
+			}
+		}
+
 		if w.SSID == "" {
 			if strings.Contains(line, "Address") {
 				fs := strings.Fields(line)
