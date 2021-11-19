@@ -1,4 +1,4 @@
-module github.com/schollz/wifiscan
+module github.com/zerkc/wifiscan
 
 go 1.17
 

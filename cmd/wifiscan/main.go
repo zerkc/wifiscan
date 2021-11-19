@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	log "github.com/schollz/logger"
-	wifiscan "github.com/schollz/wifiscan"
+	wifiscan "github.com/zerkc/wifiscan"
 )
 
 func main() {
